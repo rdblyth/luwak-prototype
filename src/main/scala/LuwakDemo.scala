@@ -21,17 +21,17 @@ object LuwakDemo extends App {
 
   val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new TermFilteredPresearcher)
   //val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new MatchAllPresearcher)
-  monitor.update(getQueries().toList)
+  monitor.update(getQueries.toList)
   logger.info(s"Added ${monitor.getQueryCount} queries to monitor")
 
   val docMatches = matchDocuments()
   val totalTime = docMatches.map(_._2.getSearchTime()).sum
-  logger.info(s"Matched ${docMatches.size} documents in $totalTime ms")
-  logger.info(s"Average time to process a document: ${totalTime / docMatches.size} ms")
+  logger.info(s"Matched ${docMatches.length} documents in $totalTime ms")
+  logger.info(s"Average time to process a document: ${totalTime / docMatches.length} ms")
 
   monitor.close()
 
-  def getQueries() = {
+  def getQueries = {
     logger.info(s"Loading queries from $queriesDir")
     new File(queriesDir).listFiles().filter(_.getName.endsWith(".txt")).map(buildQuery)
   }
@@ -57,6 +57,6 @@ object LuwakDemo extends App {
   }
 
   def logDocumentMatches(docName: String, matches: Matches[QueryMatch]) = {
-    logger.info(s"Documents $docName was matched in ${matches.getSearchTime()} ms with ${matches.getQueriesRun()} queries run")
+    logger.info(s"Documents $docName was matched in ${matches.getSearchTime} ms with ${matches.getQueriesRun} queries run")
   }
 }
