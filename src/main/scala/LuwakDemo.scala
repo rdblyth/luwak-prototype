@@ -19,8 +19,8 @@ object LuwakDemo extends App {
   val logger = LoggerFactory.getLogger("LuwakDemo")
   val analyzer = new StandardAnalyzer
 
-  //val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new TermFilteredPresearcher)
-  val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new MatchAllPresearcher)
+  val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new TermFilteredPresearcher)
+  //val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new MatchAllPresearcher)
   monitor.update(getQueries(queriesDir).toList)
   logger.info(s"Added ${monitor.getQueryCount} queries to monitor")
 
@@ -40,7 +40,7 @@ object LuwakDemo extends App {
   }
 
   def matchDocuments(documentDir: String, monitor: Monitor) = {
-    val documentFiles = new File(documentsDir).listFiles()
+    val documentFiles = new File(documentsDir).listFiles().filter(_.getName.endsWith(".gz"))
     for(file <- documentFiles) yield {
       val matches = monitor.`match`(buildDocument(file), SimpleMatcher.FACTORY)
       logDocumentMatches(file.getName, matches)
