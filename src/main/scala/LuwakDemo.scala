@@ -2,7 +2,7 @@ import java.io.File
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 import org.slf4j.LoggerFactory
-import uk.co.flax.luwak.matchers.{HighlightingMatcher, HighlightsMatch}
+import uk.co.flax.luwak.matchers.SimpleMatcher
 import uk.co.flax.luwak._
 import uk.co.flax.luwak.presearcher.TermFilteredPresearcher
 import uk.co.flax.luwak.queryparsers.LuceneQueryParser
@@ -19,15 +19,17 @@ object LuwakDemo extends App {
   val analyzer = new StandardAnalyzer
 
   val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new TermFilteredPresearcher())
-  val queries = getQueries(queriesFile)
-  monitor.update(queries)
+  monitor.update(getQueries(queriesFile))
+  logger.info(s"Added ${monitor.getQueryCount} queries to monitor")
 
-  logger.info(s"Added ${queries.size} queries to monitor")
-  val batch = DocumentBatch.of(buildDocs(documentsDir).toList)
+  val documents = buildDocs(documentsDir).toList
+  logger.info(s"Loaded ${documents.size} documents")
 
-  logger.info(s"Loaded ${batch.getBatchSize} documents")
-  val matches = monitor.`match`(batch, HighlightingMatcher.FACTORY)
-  outputMatches(matches)
+  val docMatches = documents.map(doc => (doc, monitor.`match`(doc, SimpleMatcher.FACTORY)))
+  docMatches.foreach{ case(doc, matches) => logDocumentMatches(doc, matches) }
+
+  val totalTime = docMatches.map(_._2.getSearchTime()).sum
+  logger.info(s"Total time to match all documents: $totalTime ms")
 
   def getQueries(queriesFile: String) = {
     logger.info(s"Loading queries from $queriesFile")
@@ -42,11 +44,7 @@ object LuwakDemo extends App {
     }
   }
 
-  def outputMatches(matches : Matches[HighlightsMatch]) {
-    logger.info(s"Matched batch of ${matches.getBatchSize()} documents in ${matches.getSearchTime()} milliseconds with ${matches.getQueriesRun()} queries run")
-
-    for(docMatches <- matches; hightLightsmatch <- docMatches) {
-      logger.info(s"\tQuery: ${hightLightsmatch.getQueryId()} (${hightLightsmatch.getHitCount()} hits)")
-    }
+  def logDocumentMatches(doc: InputDocument, matches: Matches[QueryMatch]) = {
+    logger.info(s"Documents ${doc.getId} was matched in ${matches.getSearchTime()} ms with ${matches.getQueriesRun()} queries run")
   }
 }
