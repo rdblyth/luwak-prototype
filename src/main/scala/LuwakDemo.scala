@@ -33,19 +33,22 @@ object LuwakDemo extends App {
 
   def getQueries() = {
     logger.info(s"Loading queries from $queriesDir")
-    for (file <- new File(queriesDir).listFiles()) yield {
-      val query = Source.fromFile(file)(Codec.ISO8859).getLines.mkString("\n")
-      new MonitorQuery(file.getName, query)
-    }
+    new File(queriesDir).listFiles().filter(_.getName.endsWith(".txt")).map(buildQuery)
+  }
+
+  def buildQuery(file: File) = {
+    val query = Source.fromFile(file)(Codec.ISO8859).getLines.mkString("\n")
+    new MonitorQuery(file.getName, query)
   }
 
   def matchDocuments() = {
-    val documentFiles = new File(documentsDir).listFiles().filter(_.getName.endsWith(".gz"))
-    for(file <- documentFiles) yield {
-      val matches = monitor.`match`(buildDocument(file), SimpleMatcher.FACTORY)
-      logDocumentMatches(file.getName, matches)
-      (file.getName, matches)
-    }
+    new File(documentsDir).listFiles().filter(_.getName.endsWith(".gz")).map(matchDocument)
+  }
+
+  def matchDocument(file: File) = {
+    val matches = monitor.`match`(buildDocument(file), SimpleMatcher.FACTORY)
+    logDocumentMatches(file.getName, matches)
+    (file.getName, matches)
   }
 
   def buildDocument(file: File) = {
