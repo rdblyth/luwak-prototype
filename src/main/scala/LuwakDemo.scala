@@ -21,25 +21,25 @@ object LuwakDemo extends App {
 
   val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new TermFilteredPresearcher)
   //val monitor = new Monitor(new LuceneQueryParser(FIELD, analyzer), new MatchAllPresearcher)
-  monitor.update(getQueries(queriesDir).toList)
+  monitor.update(getQueries().toList)
   logger.info(s"Added ${monitor.getQueryCount} queries to monitor")
 
-  val docMatches = matchDocuments(documentsDir, monitor)
+  val docMatches = matchDocuments()
   val totalTime = docMatches.map(_._2.getSearchTime()).sum
   logger.info(s"Matched ${docMatches.size} documents in $totalTime ms")
   logger.info(s"Average time to process a document: ${totalTime / docMatches.size} ms")
 
   monitor.close()
 
-  def getQueries(directory: String) = {
+  def getQueries() = {
     logger.info(s"Loading queries from $queriesDir")
-    for (file <- new File(directory).listFiles()) yield {
+    for (file <- new File(queriesDir).listFiles()) yield {
       val query = Source.fromFile(file)(Codec.ISO8859).getLines.mkString("\n")
       new MonitorQuery(file.getName, query)
     }
   }
 
-  def matchDocuments(documentDir: String, monitor: Monitor) = {
+  def matchDocuments() = {
     val documentFiles = new File(documentsDir).listFiles().filter(_.getName.endsWith(".gz"))
     for(file <- documentFiles) yield {
       val matches = monitor.`match`(buildDocument(file), SimpleMatcher.FACTORY)
@@ -50,7 +50,7 @@ object LuwakDemo extends App {
 
   def buildDocument(file: File) = {
     val content = Source.fromInputStream(new GZIPInputStream(new FileInputStream(file))).getLines().mkString("\n")
-    InputDocument.builder(file.getName).addField(FIELD, content, new StandardAnalyzer).build()
+    InputDocument.builder(file.getName).addField(FIELD, content, analyzer).build()
   }
 
   def logDocumentMatches(docName: String, matches: Matches[QueryMatch]) = {
